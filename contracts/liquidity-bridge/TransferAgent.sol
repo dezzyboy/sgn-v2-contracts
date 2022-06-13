@@ -23,6 +23,7 @@ contract TransferAgent is ReentrancyGuard, Pauser {
 
     /**
      * @notice Send a cross-chain transfer either via liquidity pool-based bridge or in form of mint/burn.
+     * @param _sender The address of the expected sender.
      * @param _receiver The address of the receiver.
      * @param _token The address of the token.
      * @param _amount The amount of the transfer.
@@ -35,6 +36,7 @@ contract TransferAgent is ReentrancyGuard, Pauser {
      * @param _bridgeSendType The type of bridge used by this transfer. One of the {BridgeSendType} enum.
      */
     function transfer(
+        address _sender,
         bytes calldata _receiver,
         address _token,
         uint256 _amount,
@@ -43,6 +45,7 @@ contract TransferAgent is ReentrancyGuard, Pauser {
         uint32 _maxSlippage, // slippage * 1M, eg. 0.5% -> 5000
         BridgeTransferLib.BridgeSendType _bridgeSendType
     ) external nonReentrant whenNotPaused returns (bytes32) {
+        require(_sender != address(0), "invalid sender");
         address _bridgeAddr = bridges[_bridgeSendType];
         require(_bridgeAddr != address(0), "unknown bridge type");
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
@@ -56,7 +59,7 @@ contract TransferAgent is ReentrancyGuard, Pauser {
             _bridgeSendType,
             _bridgeAddr
         );
-        emit Supplement(transferId, msg.sender, _receiver);
+        emit Supplement(transferId, _sender, _receiver);
         return transferId;
     }
 
